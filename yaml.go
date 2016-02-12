@@ -77,8 +77,15 @@ type Marshaler interface {
 // supported tag options.
 //
 func Unmarshal(in []byte, out interface{}) (err error) {
+	return UnmarshalWithTag(in, out, "yaml")
+}
+
+// UnmarshalWithTag is the same as Unmarshal, but reads a custom tag instead of
+// the default `yaml:"a"`
+func UnmarshalWithTag(in []byte, out interface{}, structTag string) (err error) {
 	defer handleErr(&err)
 	d := newDecoder()
+	d.structTag = structTag
 	p := newParser(in)
 	defer p.destroy()
 	node := p.parse()
@@ -136,8 +143,15 @@ func Unmarshal(in []byte, out interface{}) (err error) {
 //     yaml.Marshal(&T{F: 1}} // Returns "a: 1\nb: 0\n"
 //
 func Marshal(in interface{}) (out []byte, err error) {
+	return MarshalWithTag(in, "yaml")
+}
+
+// MarshalWithTag is the same as Marshal, but reads a custom tag instead of
+// the default `yaml:"a"`
+func MarshalWithTag(in interface{}, structTag string) (out []byte, err error) {
 	defer handleErr(&err)
 	e := newEncoder()
+	e.structTag = structTag
 	defer e.destroy()
 	e.marshal("", reflect.ValueOf(in))
 	e.finish()
@@ -208,7 +222,7 @@ type fieldInfo struct {
 var structMap = make(map[reflect.Type]*structInfo)
 var fieldMapMutex sync.RWMutex
 
-func getStructInfo(st reflect.Type) (*structInfo, error) {
+func getStructInfo(st reflect.Type, structTag string) (*structInfo, error) {
 	fieldMapMutex.RLock()
 	sinfo, found := structMap[st]
 	fieldMapMutex.RUnlock()
@@ -228,7 +242,7 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 
 		info := fieldInfo{Num: i}
 
-		tag := field.Tag.Get("yaml")
+		tag := field.Tag.Get(structTag)
 		if tag == "" && strings.Index(string(field.Tag), ":") < 0 {
 			tag = string(field.Tag)
 		}
@@ -265,7 +279,7 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 				}
 				inlineMap = info.Num
 			case reflect.Struct:
-				sinfo, err := getStructInfo(field.Type)
+				sinfo, err := getStructInfo(field.Type, structTag)
 				if err != nil {
 					return nil, err
 				}

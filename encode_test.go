@@ -499,3 +499,14 @@ func (s *S) TestSortedOutput(c *C) {
 		last = index
 	}
 }
+
+func (s *S) TestMarshalWithCustomTag(c *C) {
+	v := struct {
+		A string `custom:"fieldA"`
+	}{
+		A: "valA",
+	}
+	data, err := yaml.MarshalWithTag(&v, "custom")
+	c.Assert(err, IsNil)
+	c.Assert(string(data), Equals, "fieldA: valA\n")
+}

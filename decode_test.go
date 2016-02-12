@@ -958,6 +958,14 @@ func (s *S) TestUnmarshalSliceOnPreset(c *C) {
 	c.Assert(v.A, DeepEquals, []int{2})
 }
 
+func (s *S) TestUnmarshalWithCustomTag(c *C) {
+	v := struct {
+		A string `custom:"fieldA"`
+	}{}
+	yaml.UnmarshalWithTag([]byte("fieldA: valA"), &v, "custom")
+	c.Assert(v.A, DeepEquals, "valA")
+}
+
 //var data []byte
 //func init() {
 //	var err error

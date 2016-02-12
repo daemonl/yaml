@@ -187,10 +187,11 @@ func (p *parser) mapping() *node {
 // Decoder, unmarshals a node into a provided value.
 
 type decoder struct {
-	doc     *node
-	aliases map[string]bool
-	mapType reflect.Type
-	terrors []string
+	doc       *node
+	aliases   map[string]bool
+	mapType   reflect.Type
+	terrors   []string
+	structTag string
 }
 
 var (
@@ -201,7 +202,7 @@ var (
 )
 
 func newDecoder() *decoder {
-	d := &decoder{mapType: defaultMapType}
+	d := &decoder{mapType: defaultMapType, structTag: "yaml"}
 	d.aliases = make(map[string]bool)
 	return d
 }
@@ -601,7 +602,7 @@ func (d *decoder) mappingSlice(n *node, out reflect.Value) (good bool) {
 }
 
 func (d *decoder) mappingStruct(n *node, out reflect.Value) (good bool) {
-	sinfo, err := getStructInfo(out.Type())
+	sinfo, err := getStructInfo(out.Type(), d.structTag)
 	if err != nil {
 		panic(err)
 	}
